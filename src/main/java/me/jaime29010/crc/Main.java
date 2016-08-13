@@ -32,11 +32,12 @@ public final class Main extends JavaPlugin implements Listener {
             if (event.getInventory() instanceof AnvilInventory) {
                 ItemStack item = event.getCurrentItem();
                 if (item == null) return;
-                if (item instanceof Repairable) {
-                    Repairable repairable = (Repairable) item;
+                if (item.getItemMeta() instanceof Repairable) {
+                    Repairable repairable = (Repairable) item.getItemMeta();
                     int current = repairable.getRepairCost();
                     if (current != -1 && current != cost) {
                         repairable.setRepairCost(cost);
+                        item.setItemMeta((ItemMeta) repairable);
                         event.setCurrentItem(item);
                         if (config.getBoolean("message.enabled")) {
                             player.sendMessage(ChatColor.translateAlternateColorCodes('&', config.getString("message.text")
