@@ -1,0 +1,3 @@
+name: CustomRepairCost
+version: ${project.version}
+main: me.jaime29010.crc.Main

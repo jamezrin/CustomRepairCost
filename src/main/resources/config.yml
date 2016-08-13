@@ -1,0 +1,7 @@
+# The cost of xp levels for repairing a item
+cost: 10
+
+# The message to send to the player
+message:
+  enabled: true
+  text: '&cThe item in your inventory now will have an repair cost of %cost% levels'
