@@ -1,7 +1,7 @@
 package me.jaime29010.crc;
 
-import net.md_5.bungee.api.ChatColor;
-import org.bukkit.Material;
+import me.jaimemartz.faucet.ConfigUtil;
+import me.jaimemartz.faucet.Messager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,29 +12,38 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Repairable;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.bukkit.Material.*;
+import org.inventivetalent.update.spiget.SpigetUpdate;
+import org.inventivetalent.update.spiget.UpdateCallback;
 
 public final class Main extends JavaPlugin implements Listener {
-    public static final List<String> REPAIRABLE_ITEMS = Collections.unmodifiableList(Arrays.asList(
-            "WOOD_SWORD", "WOOD_SPADE", "WOOD_HOE", "WOOD_AXE", "WOOD_PICKAXE",
-            "CHAINMAIL_HELMET", "CHAINMAIL_CHESTPLATE", "CHAINMAIL_LEGGINGS", "CHAINMAIL_BOOTS",
-            "IRON_SWORD", "IRON_HELMET", "IRON_CHESTPLATE", "IRON_LEGGINGS", "IRON_BOOTS", "IRON_SPADE", "IRON_HOE", "IRON_AXE", "IRON_PICKAXE",
-            "GOLD_SWORD", "GOLD_HELMET", "GOLD_CHESTPLATE", "GOLD_LEGGINGS", "GOLD_BOOTS", "GOLD_SPADE", "GOLD_HOE", "GOLD_AXE", "GOLD_PICKAXE",
-            "DIAMOND_SWORD", "DIAMOND_HELMET", "DIAMOND_CHESTPLATE", "DIAMOND_LEGGINGS", "DIAMOND_BOOTS", "DIAMOND_SPADE", "DIAMOND_HOE", "DIAMOND_AXE", "DIAMOND_PICKAXE",
-            "SHIELD", "ELYTRA", "CARROT_STICK", "FLINT_AND_STEEL", "FISHING_ROD", "SHEARS", "BOW"));
     private FileConfiguration config;
-    private int cost = 10;
 
     @Override
     public void onEnable() {
-        config = ConfigurationManager.loadConfig("config.yml", this);
-        cost = config.getInt("cost");
+        getConfig();
+
+        if (config.getBoolean("auto-update")) {
+            final SpigetUpdate updater = new SpigetUpdate(this, 18822);
+            updater.checkForUpdate(new UpdateCallback() {
+                @Override
+                public void updateAvailable(String newVersion, String downloadUrl, boolean hasDirectDownload) {
+                    if (hasDirectDownload) {
+                        if (updater.downloadUpdate()) {
+                            getLogger().info("The plugin has successfully updated to version " + newVersion);
+                            getLogger().info("The next time you start your server the plugin will have the new version");
+                        } else {
+                            getLogger().warning("Update download failed, reason is " + updater.getFailReason());
+                        }
+                    }
+                }
+
+                @Override
+                public void upToDate() {
+                    getLogger().info("The plugin is in the latest version available");
+                }
+            });
+        }
+
 
         getServer().getPluginManager().registerEvents(this, this);
     }
@@ -46,21 +55,40 @@ public final class Main extends JavaPlugin implements Listener {
             if (event.getInventory() instanceof AnvilInventory) {
                 ItemStack item = event.getCurrentItem();
                 if (item == null) return;
-                if (REPAIRABLE_ITEMS.contains(item.getType().name())) {
+                if (config.getString("items").contains(item.getType().name())) {
                     Repairable repairable = (Repairable) item.getItemMeta();
                     int current = repairable.getRepairCost();
-                    if (current != -1 && current != cost) {
-                        repairable.setRepairCost(cost);
+                    if (current != -1 && current != config.getInt("cost")) {
+                        repairable.setRepairCost(config.getInt("cost"));
                         item.setItemMeta((ItemMeta) repairable);
                         event.setCurrentItem(item);
                         if (config.getBoolean("message.enabled")) {
-                            player.sendMessage(ChatColor.translateAlternateColorCodes('&', config.getString("message.text")
-                                    .replace("%cost%", String.valueOf(cost))
-                            ));
+                            player.sendMessage(Messager.colorize(config.getString("message.text").replace("%cost%", String.valueOf(config.getInt("cost")))));
                         }
                     }
                 }
             }
         }
+    }
+
+    @Override
+    public FileConfiguration getConfig() {
+        config = ConfigUtil.loadConfig("config.yml", this);
+        return config;
+    }
+
+    @Override
+    public void reloadConfig() {
+        getConfig();
+    }
+
+    @Override
+    public void saveConfig() {
+        ConfigUtil.saveConfig(config, "config.yml", this);
+    }
+
+    @Override
+    public void saveDefaultConfig() {
+        getConfig();
     }
 }
