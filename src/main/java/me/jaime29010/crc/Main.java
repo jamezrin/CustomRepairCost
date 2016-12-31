@@ -55,7 +55,7 @@ public final class Main extends JavaPlugin implements Listener {
             if (event.getInventory() instanceof AnvilInventory) {
                 ItemStack item = event.getCurrentItem();
                 if (item == null) return;
-                if (config.getString("items").contains(item.getType().name())) {
+                if (config.getStringList("items").contains(item.getType().name())) {
                     Repairable repairable = (Repairable) item.getItemMeta();
                     int current = repairable.getRepairCost();
                     if (current != -1 && current != config.getInt("cost")) {
@@ -73,13 +73,15 @@ public final class Main extends JavaPlugin implements Listener {
 
     @Override
     public FileConfiguration getConfig() {
-        config = ConfigUtil.loadConfig("config.yml", this);
+        if (config == null) {
+            saveDefaultConfig();
+        }
         return config;
     }
 
     @Override
     public void reloadConfig() {
-        getConfig();
+        saveDefaultConfig();
     }
 
     @Override
@@ -89,6 +91,6 @@ public final class Main extends JavaPlugin implements Listener {
 
     @Override
     public void saveDefaultConfig() {
-        getConfig();
+        config = ConfigUtil.loadConfig("config.yml", this);
     }
 }
